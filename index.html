@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PastryFity ERP Ecosystem</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <img src="logo.jpeg" alt="PastryFity Logo" class="logo">
+                <h2>PastryFity</h2>
+            </div>
+            <nav>
+                <button class="nav-btn active" onclick="switchTab('pos-tab')">POS Terminal</button>
+                <button class="nav-btn" onclick="switchTab('kitchen-tab')">Kitchen & MRP</button>
+                <button class="nav-btn" onclick="switchTab('accounting-tab')">Accounting</button>
+                <button class="nav-btn" onclick="switchTab('ess-tab')">Mobile ESS</button>
+                <button class="nav-btn" onclick="switchTab('admin-tab')">Master Control</button>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- MODAL 1: POS TERMINAL -->
+            <section id="pos-tab" class="tab-content active">
+                <h1>POS Terminal & Kasir</h1>
+                <div class="pos-layout">
+                    <div class="product-grid" id="product-list">
+                        <!-- Produk akan di-render oleh JS -->
+                    </div>
+                    <div class="cart-panel">
+                        <h3>Keranjang</h3>
+                        <ul id="cart-items" class="cart-list"></ul>
+                        <div class="cart-total">Total: Rp <span id="total-price">0</span></div>
+                        <button class="btn btn-success" onclick="processCheckout()">BAYAR (QRIS/CASH)</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MODAL 2: KITCHEN & MRP -->
+            <section id="kitchen-tab" class="tab-content">
+                <h1>Kitchen & Master Resep (MRP)</h1>
+                <div class="card">
+                    <h3>Catat Roti Rusak / Waste</h3>
+                    <div class="form-group">
+                        <label>Pilih Produk (SKU)</label>
+                        <select id="waste-sku">
+                            <option value="B001">Butter Croissant (B001)</option>
+                            <option value="B002">Almond Danish (B002)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah Rusak (Pcs)</label>
+                        <input type="number" id="waste-qty" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Alasan</label>
+                        <select id="waste-reason">
+                            <option value="GOSONG">Gosong (Overbaked)</option>
+                            <option value="JATUH">Jatuh / Kontaminasi</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-danger" onclick="submitWaste()">Kirim Laporan Waste</button>
+                </div>
+            </section>
+
+            <!-- MODAL 3: ACCOUNTING -->
+            <section id="accounting-tab" class="tab-content">
+                <h1>Accounting & Finance</h1>
+                <div class="card">
+                    <h3>Buku Jurnal Umum (Auto-Posted)</h3>
+                    <button class="btn btn-primary" onclick="loadJournal()">Refresh Data Jurnal</button>
+                    <table class="data-table mt-4">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Kode Akun</th>
+                                <th>Deskripsi</th>
+                                <th>Debit (Rp)</th>
+                                <th>Kredit (Rp)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="journal-table-body">
+                            <!-- Jurnal akan di-render oleh JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- MODAL 4: MOBILE ESS -->
+            <section id="ess-tab" class="tab-content">
+                <h1>Employee Self Service (ESS)</h1>
+                <div class="card" style="max-width: 400px;">
+                    <h3>Laporan Tutup Shift</h3>
+                    <div class="form-group">
+                        <label>ID Karyawan</label>
+                        <input type="text" id="ess-id" placeholder="Contoh: BAKER_01">
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah Batch / Transaksi Selesai</label>
+                        <input type="number" id="ess-tasks" min="0" value="0">
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="ess-clean">
+                        <label for="ess-clean">Area kerja sudah dibersihkan</label>
+                    </div>
+                    <button class="btn btn-primary w-full" onclick="submitEssReport()">Kirim Laporan & Absen</button>
+                </div>
+            </section>
+
+            <!-- MODAL 5: MASTER CONTROL -->
+            <section id="admin-tab" class="tab-content">
+                <h1>Master Control (PIN Center)</h1>
+                <div class="card">
+                    <h3>Otorisasi Tenant Baru</h3>
+                    <p>Sistem ini memantau pendaftaran cabang/tenant baru yang membutuhkan verifikasi PIN dari Super Admin.</p>
+                    <button class="btn btn-secondary" onclick="alert('Fitur terhubung ke database/auth/tenants.json')">Cek Antrean PIN</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
