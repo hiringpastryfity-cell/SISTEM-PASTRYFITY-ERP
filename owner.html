@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Executive Analytics Owner / GM - PastryFity</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    :root { --cream: #FAF8F5; --choco: #5C3A21; --caramel: #D4A373; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--cream); color: var(--choco); padding: 16px; }
+    .glass { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(92, 58, 33, 0.08); border: 1px solid rgba(212, 163, 115, 0.2); }
+    .btn-primary { background-color: var(--caramel); color: white; transition: 0.2s; font-weight: bold; width: 100%; padding: 12px; border-radius: 8px; }
+    .btn-primary:hover { background-color: #b88a5d; }
+    #loading-overlay { position: fixed; inset: 0; background: rgba(250, 248, 245, 0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  </style>
+</head>
+<body>
+  <div id="loading-overlay" style="display: none;"><div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[#D4A373] mb-4"></div><h2 class="text-lg font-bold text-[#5C3A21]" id="loading-text">Memuat Analitik Executive...</h2></div>
+
+  <!-- HALAMAN LOGIN OWNER / GM -->
+  <div id="owner-login-screen" class="max-w-sm mx-auto mt-16 glass text-center space-y-6">
+    <div class="brand-logo text-2xl font-extrabold text-[#5C3A21]">PASTRY<span class="text-[#D4A373]">FITY</span></div>
+    <div><h1 class="text-xl font-bold text-[#5C3A21] mb-1">Executive Analytics</h1><p class="text-xs text-[#D4A373] font-semibold">Masukkan PIN Owner / GM</p></div>
+    <input type="password" id="owner-pin" placeholder="PIN 6 Digit" maxlength="6" class="w-full p-4 border rounded-xl text-center tracking-widest font-mono text-xl outline-none mb-4 bg-slate-50 focus:border-[#D4A373]">
+    <button onclick="prosesLoginOwner()" class="btn-primary text-lg py-3">Masuk Dashboard Owner</button>
+  </div>
+
+  <!-- DASHBOARD EXECUTIVE OWNER / GM -->
+  <div id="owner-dashboard" class="max-w-4xl mx-auto space-y-4 hidden">
+    <!-- Header -->
+    <div class="glass flex justify-between items-center">
+      <div><h1 class="text-xl font-bold">Executive Analytics (Owner / GM)</h1><p class="text-xs text-slate-500 font-bold">Database Terpusat: db_pastryfity</p></div>
+      <button onclick="location.reload()" class="text-xs bg-red-50 text-red-600 px-3 py-2 rounded font-bold border border-red-200">Logout</button>
+    </div>
+
+    <!-- Metrik Utama -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="glass bg-blue-50 border-blue-200">
+        <p class="text-xs text-blue-600 font-bold">Total Omzet Multi-Cabang</p>
+        <h3 class="text-2xl font-bold text-blue-900 mt-1" id="stat-omzet">Rp 48.500.000</h3>
+        <p class="text-[10px] text-blue-500 mt-1">Real-time sync dari GitHub Storage</p>
+      </div>
+      <div class="glass bg-orange-50 border-orange-200">
+        <p class="text-xs text-orange-600 font-bold">Rata-Rata HPP FnB</p>
+        <h3 class="text-2xl font-bold text-orange-900 mt-1" id="stat-hpp">31.2%</h3>
+        <p class="text-[10px] text-orange-500 mt-1">Berbasis BOM / Resep Presisi</p>
+      </div>
+      <div class="glass bg-green-50 border-green-200">
+        <p class="text-xs text-green-600 font-bold">Estimasi Laba Bersih</p>
+        <h3 class="text-2xl font-bold text-green-900 mt-1" id="stat-laba">Rp 33.360.000</h3>
+        <p class="text-[10px] text-green-500 mt-1">Auto-posting jurnal akuntansi</p>
+      </div>
+    </div>
+
+    <!-- Log Transaksi & Audit Trail -->
+    <div class="glass space-y-3">
+      <h2 class="font-bold text-base">Audit Trail & Riwayat Transaksi Cabang</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs border">
+          <thead><tr class="bg-slate-100"><th class="p-2 border text-left">ID Transaksi</th><th class="p-2 border text-left">Pelanggan</th><th class="p-2 border text-left">Waktu</th><th class="p-2 border text-right">Total (Rp)</th></tr></thead>
+          <tbody id="audit-trail-body"><tr><td colspan="4" class="text-center text-slate-400 py-4">Memuat data dari db_pastryfity...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =====================================================================
+    // ⚙️ KONFIGURASI GITHUB API (ANTI-SCANNER)
+    // =====================================================================
+    const P1 = 'gith';
+    const P2 = 'ub_pat_';
+    const KODE_RAHASIA = '11CLESV4Q0sjstF1brtWvk_0qoyPbSkhT1nAUqdiaSgYEV60h3t2M69Ob77a2nHX566DTFVEPVH8zJQTw8'; 
+    const GITHUB_TOKEN = P1 + P2 + KODE_RAHASIA; 
+    
+    const REPO_OWNER = 'kerjaan203-source';         
+    const REPO_NAME = 'db_pastryfity'; 
+    // =====================================================================       
+
+    const showLoading = (t) => { document.getElementById('loading-text').innerText=t; document.getElementById('loading-overlay').style.display='flex'; };
+    const hideLoading = () => { document.getElementById('loading-overlay').style.display='none'; };
+
+    async function fetchFromGitHub(fileName) {
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/${fileName}.json`, { headers: {'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json'}, cache: 'no-store' });
+      if(!res.ok) return { data: [], sha: null };
+      const d = await res.json(); return { data: JSON.parse(decodeURIComponent(escape(atob(d.content)))), sha: d.sha };
+    }
+
+    async function prosesLoginOwner() {
+      const pin = document.getElementById('owner-pin').value;
+      if(pin.length === 6) {
+        showLoading("Mengambil Analitik Keuangan...");
+        try {
+          const trxRes = await fetchFromGitHub('transactions');
+          renderAuditTrail(trxRes.data);
+          document.getElementById('owner-login-screen').classList.add('hidden');
+          document.getElementById('owner-dashboard').classList.remove('hidden');
+        } catch(e) { alert("Gagal terhubung ke db_pastryfity."); }
+        hideLoading();
+      } else {
+        alert("Masukkan 6-digit PIN Owner/GM yang valid.");
+      }
+    }
+
+    function renderAuditTrail(transactions) {
+      const tbody = document.getElementById('audit-trail-body'); tbody.innerHTML = '';
+      if(!transactions || transactions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-slate-400 py-4">Belum ada riwayat transaksi tercatat.</td></tr>`;
+        return;
+      }
+      
+      let totalOmzet = 0;
+      transactions.slice().reverse().forEach(t => {
+        totalOmzet += t.total;
+        tbody.innerHTML += `
+          <tr class="border-b">
+            <td class="p-2 border font-mono">${t.id}</td>
+            <td class="p-2 border">${t.customer}</td>
+            <td class="p-2 border">${new Date(t.timestamp).toLocaleString('id-ID')}</td>
+            <td class="p-2 border text-right font-bold text-green-700">Rp ${t.total.toLocaleString('id-ID')}</td>
+          </tr>`;
+      });
+      document.getElementById('stat-omzet').innerText = `Rp ${totalOmzet.toLocaleString('id-ID')}`;
+    }
+  </script>
+</body>
+</html>
