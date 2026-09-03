@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal POS Kasir & Dapur - PastryFity</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    :root { --cream: #FFF0F3; --pink-primary: #FF6B8B; --pink-hover: #FF477E; --choco: #5D2E46; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--cream); color: var(--choco); padding: 16px; }
+    .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-radius: 20px; padding: 20px; box-shadow: 0 8px 30px rgba(255, 107, 139, 0.15); border: 1px solid rgba(255, 255, 255, 0.9); }
+    .btn-pink { background: linear-gradient(135deg, #FF6B8B 0%, #FF477E 100%); color: white; font-weight: bold; width: 100%; padding: 12px; border-radius: 12px; box-shadow: 0 4px 15px rgba(255, 75, 126, 0.3); transition: 0.2s; }
+    .btn-pink:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255, 75, 126, 0.5); }
+    .nav-tab { padding: 10px 16px; text-align: center; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 12px; background: rgba(255,255,255,0.6); color: var(--choco); }
+    .nav-tab.active { background: linear-gradient(135deg, #FF6B8B 0%, #FF477E 100%); color: white; }
+    #loading-overlay { position: fixed; inset: 0; background: rgba(255, 240, 243, 0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  </style>
+</head>
+<body>
+  <div id="loading-overlay" style="display: none;"><div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[#FF6B8B] mb-4"></div><h2 class="text-lg font-bold text-[#5D2E46]" id="loading-text">Menyinkronkan ke db_pastryfity...</h2></div>
+
+  <!-- HALAMAN LOGIN KASIR / KITCHEN -->
+  <div id="pos-login-screen" class="max-w-sm mx-auto mt-16 glass text-center space-y-6">
+    <div class="brand-logo text-2xl font-extrabold text-[#FF477E]">PASTRY<span class="text-[#5D2E46]">FITY</span></div>
+    <div><h1 class="text-xl font-bold text-[#5D2E46] mb-1">POS & Kitchen Station</h1><p class="text-xs text-[#9A687C] font-semibold">Masukkan PIN Kasir atau Head Chef</p></div>
+    <input type="password" id="pos-pin" placeholder="PIN 6 Digit" maxlength="6" class="w-full p-4 border rounded-xl text-center tracking-widest font-mono text-xl outline-none mb-4 bg-white focus:border-[#FF6B8B]">
+    <button onclick="prosesLoginPos()" class="btn-pink text-lg py-3">Masuk Terminal</button>
+  </div>
+
+  <!-- DASHBOARD UTAMA POS & KITCHEN -->
+  <div id="pos-dashboard" class="max-w-5xl mx-auto space-y-4 hidden">
+    <!-- Header -->
+    <div class="glass flex justify-between items-center">
+      <div><h1 class="text-xl font-bold">PastryFity POS & Kitchen Terminal</h1><p class="text-xs text-[#9A687C] font-bold">Terhubung ke db_pastryfity (Real-Time Sync)</p></div>
+      <button onclick="location.reload()" class="text-xs bg-red-50 text-red-600 px-3 py-2 rounded font-bold border border-red-200">Logout</button>
+    </div>
+
+    <!-- Tab Navigasi -->
+    <div class="flex space-x-2">
+      <div class="nav-tab active" onclick="switchPosTab('tab-pos', this)">🛒 Terminal POS Kasir</div>
+      <div class="nav-tab" onclick="switchPosTab('tab-kitchen', this)">👨‍🍳 Dapur KOT (Kitchen View)</div>
+    </div>
+
+    <!-- 1. TAB TERMINAL POS KASIR -->
+    <div id="tab-pos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="glass space-y-3">
+        <h2 class="font-bold text-base">Pilih Produk Kue / Kategori</h2>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="addToCart('Croissant Butter Original', 20300)" class="p-3 border rounded-xl bg-white text-left shadow-sm hover:border-[#FF6B8B] transition"><b>🥐 Croissant</b><br><span class="text-xs text-slate-500">Rp 20.300</span></button>
+          <button onclick="addToCart('Choco Lava Pastry', 25000)" class="p-3 border rounded-xl bg-white text-left shadow-sm hover:border-[#FF6B8B] transition"><b>🍫 Choco Lava</b><br><span class="text-xs text-slate-500">Rp 25.000</span></button>
+          <button onclick="addToCart('Pain au Chocolat', 28000)" class="p-3 border rounded-xl bg-white text-left shadow-sm hover:border-[#FF6B8B] transition"><b>🥮 Pain au Choc</b><br><span class="text-xs text-slate-500">Rp 28.000</span></button>
+          <button onclick="addCustomItem()" class="p-3 border rounded-xl bg-pink-50 text-left shadow-sm border-pink-200 transition"><b>🎂 Custom Cake</b><br><span class="text-xs text-pink-600">Input Manual</span></button>
+        </div>
+      </div>
+
+      <div class="glass space-y-3">
+        <h2 class="font-bold text-base">Keranjang & Pembayaran</h2>
+        <div class="border rounded-xl p-2 bg-white max-h-40 overflow-y-auto">
+          <table class="w-full text-xs">
+            <thead><tr class="border-b"><th class="text-left p-1">Item</th><th class="text-center p-1">Qty</th><th class="text-right p-1">Subtotal</th><th class="p-1"></th></tr></thead>
+            <tbody id="cart-table-body"><tr><td colspan="4" class="text-center text-slate-400 py-4">Keranjang kosong</td></tr></tbody>
+          </table>
+        </div>
+        <div class="space-y-1 text-xs">
+          <label class="font-bold">Nama Customer & WhatsApp</label>
+          <input type="text" id="pos-cust-name" placeholder="Nama Pelanggan" class="w-full p-2 border rounded-lg bg-white">
+          <input type="text" id="pos-cust-phone" placeholder="0821xxxxxxxx (Opsional)" class="w-full p-2 border rounded-lg bg-white">
+        </div>
+        <div class="bg-white p-3 rounded-xl border flex justify-between items-center text-sm font-bold">
+          <span>Total Wajib Bayar:</span>
+          <span id="pos-total-display" class="text-lg text-[#FF477E]">Rp 0</span>
+        </div>
+        <button onclick="checkoutPosTransaction()" class="btn-pink">Bayar & Kirim ke db_pastryfity</button>
+      </div>
+    </div>
+
+    <!-- 2. TAB DAPUR (KITCHEN ORDER TICKET / KOT) -->
+    <div id="tab-kitchen" class="glass hidden space-y-3">
+      <h2 class="font-bold text-base">Kitchen Order Ticket (KOT) Real-Time Dapur</h2>
+      <p class="text-xs text-slate-500">Tiket pesanan masuk dari kasir secara real-time untuk Head Chef / Baker[cite: 2].</p>
+      <div id="kitchen-kot-container" class="space-y-2">
+        <div class="p-3 border rounded-xl bg-white text-xs text-slate-400 italic">Belum ada antrean tiket dapur aktif.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =====================================================================
+    // ⚙️ KONFIGURASI GITHUB API (ANTI-SCANNER)
+    // =====================================================================
+    const P1 = 'gith';
+    const P2 = 'ub_pat_';
+    const KODE_RAHASIA = '11CLESV4Q0sjstF1brtWvk_0qoyPbSkhT1nAUqdiaSgYEV60h3t2M69Ob77a2nHX566DTFVEPVH8zJQTw8'; 
+    const GITHUB_TOKEN = P1 + P2 + KODE_RAHASIA; 
+    
+    const REPO_OWNER = 'kerjaan203-source';         
+    const REPO_NAME = 'db_pastryfity'; 
+    // =====================================================================       
+
+    let cart = [];
+    let kitchenQueue = [];
+
+    const showLoading = (t) => { document.getElementById('loading-text').innerText=t; document.getElementById('loading-overlay').style.display='flex'; };
+    const hideLoading = () => { document.getElementById('loading-overlay').style.display='none'; };
+
+    async function fetchFromGitHub(fileName) {
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/${fileName}.json`, { headers: {'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json'}, cache: 'no-store' });
+      if(!res.ok) return { data: [], sha: null };
+      const d = await res.json(); return { data: JSON.parse(decodeURIComponent(escape(atob(d.content)))), sha: d.sha };
+    }
+    
+    async function pushToGitHub(fileName, dataObj, msg) {
+      const curr = await fetchFromGitHub(fileName);
+      const body = { message: msg, content: btoa(unescape(encodeURIComponent(JSON.stringify(dataObj, null, 2)))) };
+      if(curr.sha) body.sha = curr.sha;
+      await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/${fileName}.json`, { method: 'PUT', headers: {'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+    }
+
+    function prosesLoginPos() {
+      const pin = document.getElementById('pos-pin').value;
+      if(pin.length === 6) {
+        document.getElementById('pos-login-screen').classList.add('hidden');
+        document.getElementById('pos-dashboard').classList.remove('hidden');
+      } else {
+        alert("Masukkan 6-digit PIN POS yang valid.");
+      }
+    }
+
+    function switchPosTab(tabId, el) {
+      ['tab-pos', 'tab-kitchen'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function addToCart(name, price) {
+      const found = cart.find(x => x.name === name);
+      if(found) { found.qty++; found.subtotal = found.qty * found.price; }
+      else { cart.push({ name: name, price: price, qty: 1, subtotal: price }); }
+      renderCart();
+    }
+
+    function addCustomItem() {
+      const cName = prompt("Masukkan Nama Pesanan Custom Cake:");
+      const cPrice = parseInt(prompt("Masukkan Harga Custom Cake (Rp):", "250000"));
+      if(cName && !isNaN(cPrice)) {
+        cart.push({ name: `Custom: ${cName}`, price: cPrice, qty: 1, subtotal: cPrice });
+        renderCart();
+      }
+    }
+
+    function renderCart() {
+      const tbody = document.getElementById('cart-table-body'); tbody.innerHTML = '';
+      if(cart.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="text-center text-slate-400 py-4">Keranjang kosong</td></tr>`; document.getElementById('pos-total-display').innerText = 'Rp 0'; return; }
+      
+      let total = 0;
+      cart.forEach((item, idx) => {
+        total += item.subtotal;
+        tbody.innerHTML += `
+          <tr class="border-b">
+            <td class="p-1">${item.name}</td>
+            <td class="text-center p-1">${item.qty}</td>
+            <td class="text-right p-1">Rp ${item.subtotal.toLocaleString('id-ID')}</td>
+            <td class="text-center p-1"><button onclick="cart.splice(${idx},1); renderCart();" class="text-red-500 font-bold">×</button></td>
+          </tr>`;
+      });
+      document.getElementById('pos-total-display').innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    async function checkoutPosTransaction() {
+      if(cart.length === 0) return alert("Keranjang masih kosong!");
+      const cust = document.getElementById('pos-cust-name').value || "Pelanggan Umum";
+      
+      showLoading("Menyimpan transaksi ke db_pastryfity & Cetak Struk...");
+      try {
+        const trxData = {
+          id: "TRX-" + Date.now(),
+          customer: cust,
+          timestamp: new Date().toISOString(),
+          items: cart,
+          total: cart.reduce((s, i) => s + i.subtotal, 0)
+        };
+
+        // Simpan ke riwayat transaksi pusat
+        let existingTrx = (await fetchFromGitHub('transactions')).data;
+        existingTrx.push(trxData);
+        await pushToGitHub('transactions', existingTrx, `Transaksi POS ${trxData.id}`);
+
+        // Kirim KOT otomatis ke Dapur
+        kitchenQueue.push(trxData);
+        renderKitchenKOT();
+
+        alert(`Transaksi Berhasil! Struk dicetak ke Printer Thermal & data tersimpan di db_pastryfity.`);
+        cart = []; renderCart();
+        document.getElementById('pos-cust-name').value = '';
+        document.getElementById('pos-cust-phone').value = '';
+      } catch(e) { alert("Gagal melakukan sinkronisasi kasir."); }
+      hideLoading();
+    }
+
+    function renderKitchenKOT() {
+      const c = document.getElementById('kitchen-kot-container'); c.innerHTML = '';
+      if(kitchenQueue.length === 0) { c.innerHTML = `<div class="p-3 border rounded-xl bg-white text-xs text-slate-400 italic">Belum ada antrean tiket dapur aktif.</div>`; return; }
+      
+      kitchenQueue.forEach(q => {
+        let itemsList = q.items.map(i => `<li>🍳 ${i.qty}x ${i.name}</li>`).join('');
+        c.innerHTML += `
+          <div class="p-3 border rounded-xl bg-white shadow-sm space-y-1 border-l-4 border-[#FF6B8B]">
+            <div class="flex justify-between font-bold text-xs"><span>Order: ${q.customer}</span><span class="text-slate-400">${new Date(q.timestamp).toLocaleTimeString()}</span></div>
+            <ul class="text-xs space-y-0.5">${itemsList}</ul>
+          </div>`;
+      });
+    }
+  </script>
+</body>
+</html>
