@@ -182,4 +182,5 @@ async function loadJournal() {
             </tr>
         `;
     });
+    
 }
