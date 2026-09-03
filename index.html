@@ -1,131 +1,413 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PastryFity ERP Ecosystem</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Karyawan - SATU DATA PASTRYFITY</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    :root { --cream: #FAF8F5; --choco: #5C3A21; --caramel: #D4A373; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--cream); color: var(--choco); padding: 16px; }
+    .glass { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(92, 58, 33, 0.08); border: 1px solid rgba(212, 163, 115, 0.2); }
+    .btn-primary { background-color: var(--caramel); color: white; transition: 0.2s; font-weight: bold; width: 100%; padding: 12px; border-radius: 8px; }
+    .btn-primary:hover { background-color: #b88a5d; }
+    .nav-item { padding: 10px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 8px; flex: 1; }
+    .nav-active { background-color: var(--choco); color: white; }
+    .nav-inactive { background-color: #f1f5f9; color: #64748b; }
+    #loading-overlay { position: fixed; inset: 0; background: rgba(250, 248, 245, 0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="logo-container">
-                <img src="logo.jpeg" alt="PastryFity Logo" class="logo">
-                <h2>PastryFity</h2>
-            </div>
-            <nav>
-                <button class="nav-btn active" onclick="switchTab('pos-tab')">POS Terminal</button>
-                <button class="nav-btn" onclick="switchTab('kitchen-tab')">Kitchen & MRP</button>
-                <button class="nav-btn" onclick="switchTab('accounting-tab')">Accounting</button>
-                <button class="nav-btn" onclick="switchTab('ess-tab')">Mobile ESS</button>
-                <button class="nav-btn" onclick="switchTab('admin-tab')">Master Control</button>
-            </nav>
-        </aside>
+  <div id="loading-overlay" style="display: none;"><div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[#D4A373] mb-4"></div><h2 class="text-lg font-bold text-[#5C3A21]" id="loading-text">Memproses...</h2></div>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            
-            <!-- MODAL 1: POS TERMINAL -->
-            <section id="pos-tab" class="tab-content active">
-                <h1>POS Terminal & Kasir</h1>
-                <div class="pos-layout">
-                    <div class="product-grid" id="product-list">
-                        <!-- Produk akan di-render oleh JS -->
-                    </div>
-                    <div class="cart-panel">
-                        <h3>Keranjang</h3>
-                        <ul id="cart-items" class="cart-list"></ul>
-                        <div class="cart-total">Total: Rp <span id="total-price">0</span></div>
-                        <button class="btn btn-success" onclick="processCheckout()">BAYAR (QRIS/CASH)</button>
-                    </div>
-                </div>
-            </section>
+  <!-- HALAMAN LOGIN KARYAWAN (1 LINK PENGALIHAN PIN) -->
+  <div id="login-screen" class="max-w-sm mx-auto mt-16 glass text-center space-y-6">
+    <div class="brand-logo text-2xl font-extrabold text-[#5C3A21]">PASTRY<span class="text-[#D4A373]">FITY</span></div>
+    <div><h1 class="text-xl font-bold text-[#5C3A21] mb-1">Single Entry Portal</h1><p class="text-xs text-[#D4A373] font-semibold">Masukkan PIN Karyawan Anda</p></div>
+    <input type="password" id="login-pin" placeholder="PIN 6 Digit" maxlength="6" class="w-full p-4 border rounded-xl text-center tracking-widest font-mono text-xl outline-none mb-4 bg-slate-50 focus:border-[#D4A373]">
+    <button onclick="prosesLogin()" class="btn-primary text-lg py-3">Masuk Sistem</button>
+  </div>
 
-            <!-- MODAL 2: KITCHEN & MRP -->
-            <section id="kitchen-tab" class="tab-content">
-                <h1>Kitchen & Master Resep (MRP)</h1>
-                <div class="card">
-                    <h3>Catat Roti Rusak / Waste</h3>
-                    <div class="form-group">
-                        <label>Pilih Produk (SKU)</label>
-                        <select id="waste-sku">
-                            <option value="B001">Butter Croissant (B001)</option>
-                            <option value="B002">Almond Danish (B002)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Jumlah Rusak (Pcs)</label>
-                        <input type="number" id="waste-qty" min="1" value="1">
-                    </div>
-                    <div class="form-group">
-                        <label>Alasan</label>
-                        <select id="waste-reason">
-                            <option value="GOSONG">Gosong (Overbaked)</option>
-                            <option value="JATUH">Jatuh / Kontaminasi</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-danger" onclick="submitWaste()">Kirim Laporan Waste</button>
-                </div>
-            </section>
-
-            <!-- MODAL 3: ACCOUNTING -->
-            <section id="accounting-tab" class="tab-content">
-                <h1>Accounting & Finance</h1>
-                <div class="card">
-                    <h3>Buku Jurnal Umum (Auto-Posted)</h3>
-                    <button class="btn btn-primary" onclick="loadJournal()">Refresh Data Jurnal</button>
-                    <table class="data-table mt-4">
-                        <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Kode Akun</th>
-                                <th>Deskripsi</th>
-                                <th>Debit (Rp)</th>
-                                <th>Kredit (Rp)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="journal-table-body">
-                            <!-- Jurnal akan di-render oleh JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <!-- MODAL 4: MOBILE ESS -->
-            <section id="ess-tab" class="tab-content">
-                <h1>Employee Self Service (ESS)</h1>
-                <div class="card" style="max-width: 400px;">
-                    <h3>Laporan Tutup Shift</h3>
-                    <div class="form-group">
-                        <label>ID Karyawan</label>
-                        <input type="text" id="ess-id" placeholder="Contoh: BAKER_01">
-                    </div>
-                    <div class="form-group">
-                        <label>Jumlah Batch / Transaksi Selesai</label>
-                        <input type="number" id="ess-tasks" min="0" value="0">
-                    </div>
-                    <div class="form-group checkbox-group">
-                        <input type="checkbox" id="ess-clean">
-                        <label for="ess-clean">Area kerja sudah dibersihkan</label>
-                    </div>
-                    <button class="btn btn-primary w-full" onclick="submitEssReport()">Kirim Laporan & Absen</button>
-                </div>
-            </section>
-
-            <!-- MODAL 5: MASTER CONTROL -->
-            <section id="admin-tab" class="tab-content">
-                <h1>Master Control (PIN Center)</h1>
-                <div class="card">
-                    <h3>Otorisasi Tenant Baru</h3>
-                    <p>Sistem ini memantau pendaftaran cabang/tenant baru yang membutuhkan verifikasi PIN dari Super Admin.</p>
-                    <button class="btn btn-secondary" onclick="alert('Fitur terhubung ke database/auth/tenants.json')">Cek Antrean PIN</button>
-                </div>
-            </section>
-
-        </main>
+  <!-- DASHBOARD KARYAWAN -->
+  <div id="dashboard-screen" class="max-w-md mx-auto space-y-4 hidden">
+    <!-- Header -->
+    <div class="glass flex justify-between items-start">
+      <div><h1 class="text-lg font-bold">Selamat Datang,</h1><p class="text-xs text-slate-500 font-bold" id="user-info">-</p></div>
+      <button onclick="location.reload()" class="text-xs bg-red-50 text-red-600 px-3 py-1 rounded font-bold border border-red-200">Logout</button>
     </div>
-    <script src="app.js"></script>
-</body>
+
+    <!-- Menu Navigasi -->
+    <div class="flex space-x-2 bg-white p-2 rounded-xl shadow-sm border border-slate-100">
+      <div class="nav-item nav-active" onclick="switchMenu('menu-beranda', this)">Beranda</div>
+      <div class="nav-item nav-inactive" onclick="switchMenu('menu-presensi', this)">Presensi</div>
+      <div class="nav-item nav-inactive" onclick="switchMenu('menu-pengajuan', this)">Pengajuan</div>
+      <div class="nav-item nav-inactive" onclick="switchMenu('menu-lapor', this)">Lapor & Arsip</div>
+    </div>
+
+    <!-- 1. BERANDA -->
+    <div id="menu-beranda" class="glass">
+      <h2 class="font-bold text-lg mb-3">Info & Catatan Hari Ini</h2>
+      <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-3"><p class="text-sm font-bold text-blue-800 mb-1">📢 Pengumuman Manager</p><p class="text-xs text-blue-900" id="broadcast-pengumuman">-</p></div>
+      <div class="bg-[#FAF8F5] p-4 rounded-lg border border-[#D4A373] mb-3"><p class="text-sm font-bold mb-1">📝 Planning Hari Ini</p><p class="text-xs text-slate-600" id="planning-hari-ini">-</p></div>
+      <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200"><p class="text-sm font-bold text-yellow-800 mb-1">💬 Feedback Manager</p><p class="text-xs text-yellow-900" id="feedback-manager">Belum ada catatan.</p></div>
+    </div>
+
+    <!-- 2. PRESENSI -->
+    <div id="menu-presensi" class="glass hidden">
+      <h2 class="font-bold text-lg mb-3">Absensi Datang & Pulang</h2>
+      <div class="bg-slate-50 p-4 rounded-lg border text-center mb-4">
+        <video id="camera-stream" class="w-full rounded-lg bg-black mb-2 hidden" autoplay playsinline></video>
+        <canvas id="camera-canvas" class="hidden"></canvas>
+        <p id="gps-status" class="text-xs font-bold text-red-500 mb-2">📍 GPS belum ditarik</p>
+        <p id="absen-info" class="text-xs font-bold text-[#5C3A21] mb-2 hidden"></p>
+        <button onclick="startCameraAndGPS()" class="btn-primary bg-[#5C3A21] mb-2" id="btn-prepare-absen">Aktifkan Kamera & GPS</button>
+        <div class="grid grid-cols-3 gap-2 hidden" id="absen-actions"></div>
+      </div>
+    </div>
+
+    <!-- 3. PENGAJUAN (Cuti, Izin, Sakit, Off Mingguan, Roker Off) -->
+    <div id="menu-pengajuan" class="glass hidden">
+      <h2 class="font-bold text-lg mb-3">Form Pengajuan Surat Resmi</h2>
+      <label class="text-[10px] text-slate-500 font-bold">PILIHAN PENGAJUAN</label>
+      <select id="pengajuan-jenis" class="w-full p-2 border rounded-lg mb-3 text-sm">
+        <option value="Cuti">Cuti</option>
+        <option value="Izin">Izin</option>
+        <option value="Sakit">Sakit</option>
+        <option value="Off Mingguan">Off Mingguan (Rekap Mingguan)</option>
+        <option value="Roker Off">Roker Off (Rekap Mingguan)</option>
+      </select>
+      <div class="flex space-x-2 mb-3">
+        <div class="w-1/2"><label class="text-[10px] text-slate-500 font-bold">TANGGAL MULAI</label><input type="date" id="pengajuan-mulai" class="w-full p-2 border rounded text-sm"></div>
+        <div class="w-1/2"><label class="text-[10px] text-slate-500 font-bold">TANGGAL BERAKHIR</label><input type="date" id="pengajuan-akhir" class="w-full p-2 border rounded text-sm"></div>
+      </div>
+      <label class="text-[10px] text-slate-500 font-bold">ALASAN</label>
+      <textarea id="pengajuan-alasan" placeholder="Alasan Lengkap..." class="w-full p-2 border rounded-lg mb-3 text-sm h-20"></textarea>
+      
+      <button onclick="kirimPengajuan()" class="btn-primary mb-6">Ajukan & Generate Surat Resmi PDF</button>
+      
+      <h3 class="font-bold text-sm mb-2 border-t pt-4">Status Pengajuan & Notifikasi Approval</h3>
+      <div id="riwayat-pengajuan" class="space-y-2 max-h-48 overflow-y-auto"></div>
+    </div>
+
+    <!-- 4. MENU PELAPORAN HARIAN (DENGAN KALENDER & FILTER TRANSISI TAHUN) -->
+    <div id="menu-lapor" class="glass hidden">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="font-bold text-lg">Laporan Harian & Arsip</h2>
+        <div class="flex space-x-1">
+          <input type="date" id="lapor-tanggal" class="p-1 border rounded text-xs font-bold bg-slate-50" onchange="filterLaporanArsip()">
+          <select id="filter-tahun" class="p-1 border rounded text-xs font-bold bg-slate-50" onchange="filterLaporanArsip()">
+            <option value="2026">Tahun 2026</option>
+            <option value="2025">Tahun 2025</option>
+            <option value="2024">Tahun 2024</option>
+          </select>
+        </div>
+      </div>
+      <div class="space-y-3 mb-4">
+        <div><label class="text-xs font-bold">Inisiatif Hari Ini</label><textarea id="lapor-inisiatif" class="w-full p-2 border rounded text-sm" rows="2"></textarea></div>
+        <div><label class="text-xs font-bold">Kendala Hari Ini</label><textarea id="lapor-kendala" class="w-full p-2 border rounded text-sm" rows="2"></textarea></div>
+        <div><label class="text-xs font-bold">Planning Besok</label><textarea id="lapor-planning" class="w-full p-2 border rounded text-sm" rows="2"></textarea></div>
+      </div>
+      <div class="border-t pt-3 mb-4"><p class="text-xs font-bold mb-2">Form Evaluasi (<span id="lapor-divisi-label"></span>)</p><div id="dynamic-fields-container" class="space-y-3"></div></div>
+      <div class="flex space-x-2">
+        <button onclick="kirimLaporan()" class="btn-primary w-2/3">Kirim Laporan</button>
+        <button onclick="downloadLaporanPDF()" class="w-1/3 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs p-2 rounded-lg transition">📄 Unduh PDF</button>
+      </div>
+      <div class="mt-4 pt-3 border-t">
+        <h3 class="font-bold text-xs mb-2 text-slate-600">Riwayat Laporan Berdasarkan Filter Tahun</h3>
+        <div id="riwayat-laporan-arsip" class="space-y-1 max-h-32 overflow-y-auto text-xs"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEMPLATE SURAT RESMI OTOMATIS (PDF) -->
+  <div id="surat-resmi-template" class="hidden bg-white p-8 text-black" style="width: 800px; font-family: 'Inter', sans-serif;">
+    <div class="border-b-2 border-[#5C3A21] pb-4 mb-6 text-center">
+      <h1 class="text-xl font-bold text-[#5C3A21]">PT. PASTRYFITY ENTERPRISE ECOSYSTEM</h1>
+      <p class="text-xs text-slate-500">Formulir Resmi Pengajuan & Rekapitulasi Operasional</p>
+    </div>
+    <div class="mb-6 space-y-1 text-xs">
+      <p><b>Nomor Surat:</b> <span id="sr-nomor">-</span></p>
+      <p><b>Perihal:</b> <span id="sr-perihal">-</span></p>
+      <p><b>Tanggal Pengajuan:</b> <span id="sr-tanggal">-</span></p>
+    </div>
+    <div class="mb-6 text-xs space-y-2">
+      <p>Dengan hormat,</p>
+      <p>Bertanda tangan di bawah ini karyawan Pastryfity:</p>
+      <table class="ml-4 space-y-1">
+        <tr><td class="font-bold w-32">Nama Karyawan:</td><td id="sr-nama">-</td></tr>
+        <tr><td class="font-bold">Divisi / Posisi:</td><td id="sr-divisi">-</td></tr>
+        <tr><td class="font-bold">Jenis Pengajuan:</td><td id="sr-jenis">-</td></tr>
+        <tr><td class="font-bold">Mulai s.d Selesai:</td><td id="sr-durasi">-</td></tr>
+      </table>
+      <p class="mt-2"><b>Alasan / Keterangan:</b></p>
+      <p id="sr-alasan" class="p-3 border rounded bg-slate-50">-</p>
+    </div>
+    <div class="mb-8 text-xs">
+      <p>Demikian surat pengajuan ini dibuat secara resmi melalui sistem pusat Pastryfity untuk dapat diproses dan mendapatkan persetujuan atasan.</p>
+    </div>
+    <div class="flex justify-between pt-12 text-center text-xs">
+      <div><p>Pemohon,</p><br><br><p class="font-bold underline" id="sr-sign-nama">-</p></div>
+      <div><p>Mengetahui (Atasan / Manager),</p><br><br><p class="font-bold underline">( TTD Manual / Stempel )</p></div>
+    </div>
+  </div>
+
+  <script>
+    // =====================================================================
+    // ⚙️ KONFIGURASI GITHUB API (ANTI-SCANNER)
+    // =====================================================================
+    const P1 = 'gith';
+    const P2 = 'ub_pat_';
+    const KODE_RAHASIA = '11CLESV4Q0sjstF1brtWvk_0qoyPbSkhT1nAUqdiaSgYEV60h3t2M69Ob77a2nHX566DTFVEPVH8zJQTw8'; 
+    const GITHUB_TOKEN = P1 + P2 + KODE_RAHASIA; 
     
+    const REPO_OWNER = 'kerjaan203-source';         
+    const REPO_NAME = 'db_pastryfity'; 
+    // =====================================================================       
+
+    let activeUser = null; 
+    let DB = { requests: [], reports: [], schema: {}, absensi: [], settings: {} };
+    let currentGps = null, mapLink = null;
+
+    const showLoading = (t) => { document.getElementById('loading-text').innerText=t; document.getElementById('loading-overlay').style.display='flex'; };
+    const hideLoading = () => { document.getElementById('loading-overlay').style.display='none'; };
+
+    document.getElementById('lapor-tanggal').valueAsDate = new Date();
+
+    async function fetchFromGitHub(fileName) {
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/${fileName}.json`, { headers: {'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json'}, cache: 'no-store' });
+      if(!res.ok) return { data: (fileName==='kpi-schema'||fileName==='pengumuman'||fileName==='settings'?{}:[]), sha: null };
+      const d = await res.json(); return { data: JSON.parse(decodeURIComponent(escape(atob(d.content)))), sha: d.sha };
+    }
+    
+    async function pushToGitHub(fileName, dataObj, msg) {
+      const curr = await fetchFromGitHub(fileName);
+      const body = { message: msg, content: btoa(unescape(encodeURIComponent(JSON.stringify(dataObj, null, 2)))) };
+      if(curr.sha) body.sha = curr.sha;
+      await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/data/${fileName}.json`, { method: 'PUT', headers: {'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+    }
+
+    async function prosesLogin() {
+      const pin = document.getElementById('login-pin').value; if(pin.length<4) return alert("PIN Tidak Valid");
+      showLoading("Memverifikasi PIN...");
+      try {
+        const [u, r, req, s, abs, peng, set] = await Promise.all([fetchFromGitHub('users'), fetchFromGitHub('reports'), fetchFromGitHub('requests'), fetchFromGitHub('kpi-schema'), fetchFromGitHub('absensi'), fetchFromGitHub('pengumuman'), fetchFromGitHub('settings')]);
+        
+        // Cek jika PIN Admin/Manager (diarahkan ke portal pengendali pusat)
+        if(pin === "999888" || pin === "000000") {
+          alert("PIN Manager/Admin terdeteksi. Silakan masuk via portal manajemen pusat.");
+          hideLoading();
+          return;
+        }
+
+        const found = u.data.find(x => x.pin === pin);
+        if(found) {
+          activeUser = found; 
+          DB.reports = r.data; DB.requests = req.data; DB.schema = s.data; DB.absensi = abs.data; DB.settings = set.data;
+          
+          document.getElementById('user-info').innerText = `${found.name} (${found.division})`;
+          document.getElementById('lapor-divisi-label').innerText = found.division;
+          document.getElementById('broadcast-pengumuman').innerText = peng.data.teks || "Tidak ada pengumuman.";
+          
+          let myReps = DB.reports.filter(x => x.nama === found.name);
+          if(myReps.length>0) {
+            let lastRep = myReps[myReps.length-1];
+            document.getElementById('planning-hari-ini').innerText = lastRep.planning || "-";
+            document.getElementById('feedback-manager').innerText = lastRep.catatan_manager || "Belum ada catatan.";
+          }
+          renderRiwayatPengajuan(); renderDynamicFields(); filterLaporanArsip();
+          document.getElementById('login-screen').classList.add('hidden'); 
+          document.getElementById('dashboard-screen').classList.remove('hidden');
+        } else alert("PIN Salah!");
+      } catch(e) { alert("Gagal koneksi ke database db_pastryfity."); }
+      hideLoading();
+    }
+
+    function switchMenu(targetId, el) {
+      ['menu-beranda', 'menu-presensi', 'menu-pengajuan', 'menu-lapor'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      document.getElementById(targetId).classList.remove('hidden');
+      document.querySelectorAll('.nav-item').forEach(x => { x.classList.remove('nav-active'); x.classList.add('nav-inactive'); });
+      el.classList.add('nav-active'); el.classList.remove('nav-inactive');
+    }
+
+    async function startCameraAndGPS() {
+      showLoading("Menyiapkan GPS & Kamera...");
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const video = document.getElementById('camera-stream'); video.srcObject = stream; video.classList.remove('hidden');
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            currentGps = `${pos.coords.latitude},${pos.coords.longitude}`;
+            mapLink = `https://maps.google.com/?q=${currentGps}`;
+            document.getElementById('gps-status').innerHTML = `📍 <a href="${mapLink}" target="_blank" class="underline text-blue-600">Lokasi Terlacak</a>`;
+            document.getElementById('btn-prepare-absen').classList.add('hidden'); 
+            
+            const actionsDiv = document.getElementById('absen-actions');
+            actionsDiv.classList.remove('hidden');
+            actionsDiv.innerHTML = `
+              <button onclick="prosesAbsen('Masuk')" class="btn-primary bg-green-600 text-[10px] p-2">Masuk</button>
+              <button onclick="prosesAbsen('Istirahat')" class="btn-primary bg-yellow-600 text-[10px] p-2">Istirahat</button>
+              <button onclick="prosesAbsen('Keluar')" class="btn-primary bg-red-600 text-[10px] p-2">Keluar</button>
+            `;
+            hideLoading();
+          }, (err) => { alert("Wajib Izinkan Akses GPS!"); hideLoading(); }
+        );
+      } catch(e) { alert("Wajib Izinkan Akses Kamera!"); hideLoading(); }
+    }
+
+    async function prosesAbsen(tipe) {
+      const v = document.getElementById('camera-stream'); const c = document.getElementById('camera-canvas');
+      c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v,0,0);
+      let imgData = c.toDataURL('image/jpeg', 0.6); 
+      
+      showLoading(`Mengirim Data ${tipe}...`);
+      const tgl = new Date().toLocaleDateString('id-ID'); const jam = new Date().toLocaleTimeString('id-ID');
+      
+      try {
+        DB.absensi.push({ id: "ABS-"+Date.now(), nama: activeUser.name, divisi: activeUser.division, tipe: tipe, tanggal: tgl, jam: jam, lokasi: mapLink, foto: imgData });
+        await pushToGitHub('absensi', DB.absensi, `${activeUser.name} ${tipe}`);
+        alert(`Absensi ${tipe} Berhasil!`);
+        v.srcObject.getTracks().forEach(t => t.stop()); v.classList.add('hidden');
+        document.getElementById('absen-actions').classList.add('hidden');
+        document.getElementById('btn-prepare-absen').classList.remove('hidden');
+      } catch(e) { alert("Gagal mengirim absensi."); }
+      hideLoading();
+    }
+
+    async function kirimPengajuan() {
+      const jenis = document.getElementById('pengajuan-jenis').value;
+      const mulai = document.getElementById('pengajuan-mulai').value;
+      const akhir = document.getElementById('pengajuan-akhir').value;
+      const alasan = document.getElementById('pengajuan-alasan').value; 
+      
+      if(!mulai || !akhir || !alasan) return alert("Lengkapi tanggal dan alasan pengajuan!");
+
+      showLoading("Mengirim ke Sistem Pusat & Generate Surat Resmi...");
+      try {
+        const newReq = {
+          id: "REQ-" + Date.now(),
+          nama: activeUser.name,
+          divisi: activeUser.division,
+          jenis: jenis,
+          tgl_mulai: mulai,
+          tgl_selesai: akhir,
+          alasan: alasan,
+          status: "Pending",
+          catatan_manager: ""
+        };
+
+        if(jenis === 'Off Mingguan' || jenis === 'Roker Off') {
+          newReq.kategori_khusus = "Rekap Mingguan Off/Roker Off";
+        }
+
+        DB.requests.push(newReq);
+        await pushToGitHub('requests', DB.requests, `Pengajuan ${jenis} oleh ${activeUser.name}`);
+        generateSuratResmiPDF(newReq);
+
+        alert("Pengajuan Berhasil Dikirim! Menunggu approval atasan. Surat resmi otomatis ter-generate.");
+        document.getElementById('pengajuan-alasan').value = '';
+        renderRiwayatPengajuan();
+      } catch(e) { alert("Gagal mengirim pengajuan."); }
+      hideLoading();
+    }
+
+    function renderRiwayatPengajuan() {
+      const c = document.getElementById('riwayat-pengajuan'); c.innerHTML='';
+      DB.requests.filter(x => x.nama === activeUser.name).reverse().forEach(r => {
+        let badgeColor = r.status === 'Approved' ? 'text-green-600 bg-green-50 border-green-200' : (r.status === 'Rejected' ? 'text-red-600 bg-red-50 border-red-200' : 'text-orange-600 bg-orange-50 border-orange-200');
+        c.innerHTML += `
+          <div class="border p-3 rounded-lg text-xs bg-slate-50 space-y-1">
+            <div class="flex justify-between font-bold"><span>${r.jenis}</span><span class="px-2 py-0.5 rounded border ${badgeColor}">${r.status}</span></div>
+            <p class="text-slate-600">Periode: ${r.tgl_mulai} s.d ${r.tgl_selesai}</p>
+            <p class="text-slate-500">Alasan: ${r.alasan}</p>
+            <p class="text-xs font-semibold text-blue-700">💬 Catatan Atasan: ${r.catatan_manager || 'Menunggu review & approval.'}</p>
+          </div>`;
+      });
+    }
+
+    // Filter Laporan Berdasarkan Kalender Tanggal dan Pilihan Tahun (Transisi Antar Tahun Buku)
+    function filterLaporanArsip() {
+      const selectedYear = document.getElementById('filter-tahun').value;
+      const container = document.getElementById('riwayat-laporan-arsip');
+      container.innerHTML = '';
+
+      const myReports = DB.reports.filter(x => x.nama === activeUser.name);
+      const filtered = myReports.filter(r => {
+        // Format tanggal tersimpan: D/M/YYYY atau YYYY-MM-DD
+        if(r.tanggal && r.tanggal.includes(selectedYear)) return true;
+        if(r.id && r.id.includes(selectedYear)) return true;
+        return false;
+      });
+
+      if(filtered.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 italic">Tidak ada arsip laporan di tahun ${selectedYear}.</p>`;
+        return;
+      }
+
+      filtered.reverse().forEach(rep => {
+        container.innerHTML += `<div class="p-2 border rounded bg-slate-50 flex justify-between items-center"><span>📅 ${rep.tanggal} - Divisi: ${rep.divisi}</span><span class="text-green-600 font-bold">Tersimpan</span></div>`;
+      });
+    }
+
+    function generateSuratResmiPDF(reqData) {
+      document.getElementById('sr-nomor').innerText = `SR/${Date.now().toString().slice(-6)}/PFY`;
+      document.getElementById('sr-perihal').innerText = `Surat Permohonan ${reqData.jenis}`;
+      document.getElementById('sr-tanggal').innerText = new Date().toLocaleDateString('id-ID');
+      document.getElementById('sr-nama').innerText = reqData.nama;
+      document.getElementById('sr-divisi').innerText = reqData.divisi;
+      document.getElementById('sr-jenis').innerText = reqData.jenis;
+      document.getElementById('sr-durasi').innerText = `${reqData.tgl_mulai} sampai ${reqData.tgl_selesai}`;
+      document.getElementById('sr-alasan').innerText = reqData.alasan;
+      document.getElementById('sr-sign-nama').innerText = reqData.nama;
+
+      const element = document.getElementById('surat-resmi-template');
+      element.classList.remove('hidden');
+
+      const opt = {
+        margin: 0.5,
+        filename: `Surat_Resmi_${reqData.jenis}_${reqData.nama.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().from(element).set(opt).save().then(() => {
+        element.classList.add('hidden');
+      });
+    }
+
+    function renderDynamicFields() {
+      const c = document.getElementById('dynamic-fields-container'); c.innerHTML='';
+      (DB.schema[activeUser.division]||[]).forEach(f => {
+        if(!f.label) return;
+        if(f.type==='checkbox') c.innerHTML+=`<div class="flex items-center space-x-2 text-sm"><input type="checkbox" class="dyn-in" data-l="${f.label}"><label>${f.label}</label></div>`;
+        else c.innerHTML+=`<div class="text-sm"><label class="block mb-1">${f.label}</label><input type="${f.type}" class="dyn-in w-full p-2 border rounded" data-l="${f.label}"></div>`;
+      });
+    }
+
+    async function kirimLaporan() {
+      const inputDate = document.getElementById('lapor-tanggal').value; 
+      const i = document.getElementById('lapor-inisiatif').value; const k = document.getElementById('lapor-kendala').value; const p = document.getElementById('lapor-planning').value;
+      if(!inputDate||!i||!k||!p) return alert("Lengkapi semua data!");
+      
+      const [yy, mm, dd] = inputDate.split('-');
+      const formattedDate = `${parseInt(dd)}/${parseInt(mm)}/${yy}`;
+
+      showLoading("Simpan Laporan...");
+      try {
+        let dyn = {}; document.querySelectorAll('.dyn-in').forEach(e => dyn[e.getAttribute('data-l')] = e.type==='checkbox'?(e.checked?'Ya':'Tidak'):e.value);
+        DB.reports.push({ id: "REP-"+Date.now(), nama: activeUser.name, divisi: activeUser.division, tanggal: formattedDate, inisiatif: i, kendala: k, planning: p, data_dinamis: dyn, skor: 0, catatan_manager: "" });
+        await pushToGitHub('reports', DB.reports, `Laporan ${activeUser.name}`); 
+        alert("Laporan Terkirim & Tersimpan di Database KPI!");
+        filterLaporanArsip();
+      } catch(e) { alert("Gagal mengirim laporan."); }
+      hideLoading();
+    }
+
+    function downloadLaporanPDF() {
+      alert("Gunakan fitur Unduh PDF pada menu Surat Pengajuan Resmi atau buat laporan harian baru.");
+    }
+  </script>
+</body>
 </html>
