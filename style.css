@@ -56,6 +56,7 @@ h1 { margin-bottom: 1.5rem; font-size: 1.8rem; color: #111827; }
 .btn-secondary { background-color: #6b7280; color: white; }
 
 /* Tables */
+
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table th, .data-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
 .data-table th { background-color: #f9fafb; font-weight: 600; }
